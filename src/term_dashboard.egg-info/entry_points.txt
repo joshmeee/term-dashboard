@@ -1,2 +1,0 @@
-[console_scripts]
-termdash = termdash.main:run
