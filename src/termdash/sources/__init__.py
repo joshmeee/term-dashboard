@@ -7,10 +7,12 @@ from termdash.sources.f1_ergast import F1ErgastSource
 from termdash.sources.mcp_base import MCPSource
 from termdash.sources.open_meteo import OpenMeteoSource
 from termdash.sources.rss import RssSource
+from termdash.sources.rss_ticker import RssTickerSource
 
 SOURCE_REGISTRY = {
     "open_meteo": OpenMeteoSource,
     "rss": RssSource,
+    "rss_ticker": RssTickerSource,
     "mcp": MCPSource,
     "espn_scores": EspnScoresSource,
     "espn_summary": EspnSummarySource,

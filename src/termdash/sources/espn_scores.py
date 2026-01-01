@@ -98,6 +98,9 @@ class EspnScoresSource(DataSource):
             line = f"{label}: {away['abbr']} {away['score']} @ {home['abbr']} {home['score']}"
             if short_detail:
                 line += f" ({short_detail})"
+            last_play = _extract_last_play(competition)
+            if last_play:
+                line += f" | Last: {last_play}"
             if highlight_favorites and is_favorite:
                 line += " [fav]"
             lines.append(line)
@@ -207,3 +210,13 @@ def _match_favorite(home: dict[str, Any], away: dict[str, Any], favorites: set[s
         if team["name"].lower() in favorites:
             return True
     return False
+
+
+def _extract_last_play(competition: dict[str, Any]) -> str:
+    situation = competition.get("situation", {}) or {}
+    last_play = situation.get("lastPlay", {}) or {}
+    text = last_play.get("text")
+    if text:
+        return str(text)
+    alt = competition.get("lastPlay", {}) or {}
+    return str(alt.get("text", "")).strip()

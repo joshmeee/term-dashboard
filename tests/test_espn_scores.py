@@ -12,6 +12,7 @@ async def test_espn_scores_live_game():
                 "competitions": [
                     {
                         "status": {"type": {"state": "in", "shortDetail": "Q3 05:32"}},
+                        "situation": {"lastPlay": {"text": "Brady pass complete"}},
                         "competitors": [
                             {"homeAway": "away", "score": "14", "team": {"abbreviation": "DAL"}},
                             {"homeAway": "home", "score": "21", "team": {"abbreviation": "PHI"}},
@@ -35,6 +36,7 @@ async def test_espn_scores_live_game():
     assert data.status == "ok"
     assert "NFL:" in data.value
     assert "DAL 14 @ PHI 21" in data.value
+    assert "Last: Brady pass complete" in data.value
 
 
 @respx.mock
