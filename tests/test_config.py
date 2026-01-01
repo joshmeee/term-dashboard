@@ -34,14 +34,14 @@ def test_load_config_from_file(tmp_path):
 def test_config_env_expansion(tmp_path, monkeypatch):
     content = """
     sources:
-      - name: Gmail
-        type: gmail_unread
+      - name: Example
+        type: rss
         options:
-          client_id: ${GMAIL_CLIENT_ID}
+          url: ${EXAMPLE_URL}
     """
-    monkeypatch.setenv("GMAIL_CLIENT_ID", "client-123")
+    monkeypatch.setenv("EXAMPLE_URL", "https://example.com/feed")
     path = tmp_path / "config.yaml"
     path.write_text(content, encoding="utf-8")
 
     config = load_config(Path(path))
-    assert config.sources[0].options["client_id"] == "client-123"
+    assert config.sources[0].options["url"] == "https://example.com/feed"
