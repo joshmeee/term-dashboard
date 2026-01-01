@@ -13,6 +13,7 @@ from rich.text import Text
 
 from termdash.config import DashboardConfig
 from termdash.sources.base import DataPoint, DataSource
+from termdash.sources.rss_ticker import RssTickerSource
 
 STATUS_STYLES = {
     "ok": "green",
@@ -77,6 +78,7 @@ class Dashboard:
             await asyncio.sleep(source.refresh_seconds)
 
     def _render(self, snapshot: dict[str, DataPoint]):
+        self._apply_auto_lines()
         header = Panel(
             Align.center(Text(self.config.title, style="bold white"), vertical="middle"),
             style="bold blue",
@@ -100,3 +102,15 @@ class Dashboard:
             body.append("\n")
             body.append(data.detail, style="dim")
         return Panel(body, title=data.title, border_style=style)
+
+    def _apply_auto_lines(self) -> None:
+        height = self.console.size.height
+        for source in self.sources:
+            if not isinstance(source, RssTickerSource):
+                continue
+            if not source.options.get("auto_lines"):
+                continue
+            min_lines = int(source.options.get("min_lines", 1))
+            max_lines = int(source.options.get("max_lines", 6))
+            lines = max(min_lines, min(max_lines, max(1, height // 6)))
+            source.options["lines"] = lines

@@ -22,3 +22,30 @@ async def test_rss_ticker_rotates():
 
     assert first.value == "Item A"
     assert second.value == "Item B"
+
+
+@respx.mock
+async def test_rss_ticker_filters_and_lines():
+    feed = """
+    <rss version="2.0">
+      <channel>
+        <item><title>Keep This</title><source>Fox News</source></item>
+        <item><title>Skip This</title><source>MSNBC</source></item>
+      </channel>
+    </rss>
+    """
+    respx.get("https://example.com/feed").mock(return_value=Response(200, text=feed))
+
+    source = RssTickerSource(
+        "Ticker",
+        10,
+        {
+            "url": "https://example.com/feed",
+            "block_sources": ["msnbc"],
+            "lines": 2,
+            "show_source": True,
+        },
+    )
+    data = await source.fetch()
+
+    assert data.value == "Keep This (Fox News)\nKeep This (Fox News)"

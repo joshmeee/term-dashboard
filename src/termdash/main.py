@@ -6,6 +6,8 @@ import importlib
 import os
 from pathlib import Path
 
+import yaml
+
 from termdash.config import load_config
 from termdash.dashboard import Dashboard
 from termdash.sources import create_source
@@ -41,13 +43,51 @@ def run() -> None:
         default=None,
         help="Path to config YAML",
     )
+    parser.add_argument(
+        "--block-source",
+        type=str,
+        default=None,
+        help="Block a news source in rss_ticker options and exit",
+    )
     args = parser.parse_args()
+
+    if args.block_source:
+        if args.config is None:
+            raise SystemExit("--config is required when using --block-source")
+        _block_source(args.config, args.block_source)
+        return
 
     config = load_config(args.config)
     mcp_client = load_mcp_client()
     sources = build_sources(config, mcp_client=mcp_client)
     dashboard = Dashboard(config, sources)
     asyncio.run(dashboard.run())
+
+
+def _block_source(config_path: Path, source_name: str) -> None:
+    data = yaml.safe_load(config_path.read_text(encoding="utf-8")) or {}
+    sources = data.get("sources", [])
+    updated = False
+    for source in sources:
+        if source.get("type") != "rss_ticker":
+            continue
+        options = source.setdefault("options", {})
+        block_sources = options.get("block_sources")
+        if not isinstance(block_sources, list):
+            block_sources = []
+        if source_name.lower() not in {str(item).lower() for item in block_sources}:
+            block_sources.append(source_name)
+        options["block_sources"] = block_sources
+        updated = True
+
+    if not updated:
+        raise SystemExit("No rss_ticker sources found in config")
+
+    config_path.write_text(
+        yaml.safe_dump(data, sort_keys=False),
+        encoding="utf-8",
+    )
+    print(f"Blocked source added: {source_name}")
 
 
 if __name__ == "__main__":
