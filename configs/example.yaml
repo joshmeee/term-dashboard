@@ -1,0 +1,68 @@
+dashboard:
+  title: Term Dashboard
+  refresh_ui_seconds: 1.5
+
+sources:
+  - name: Local Weather
+    type: open_meteo
+    refresh_seconds: 300
+    options:
+      latitude: 37.7749
+      longitude: -122.4194
+      timezone: auto
+  - name: Top News
+    type: rss
+    refresh_seconds: 300
+    options:
+      url: https://news.ycombinator.com/rss
+  - name: News Ticker
+    type: rss_ticker
+    refresh_seconds: 15
+    options:
+      auto_lines: true
+      min_lines: 2
+      max_lines: 6
+      show_source: true
+      max_items: 40
+      block_sources: ["msnbc", "al jazeera"]
+      prefer_sources: ["fox news"]
+      urls:
+        - https://news.google.com/rss/search?q=YOUR_CITY+YOUR_STATE&hl=en-US&gl=US&ceid=US:en
+        - https://news.google.com/rss/search?q=YOUR_STATE+government&hl=en-US&gl=US&ceid=US:en
+        - https://news.google.com/rss/search?q=US+federal+government&hl=en-US&gl=US&ceid=US:en
+        - https://news.google.com/rss/search?q=Israel+OR+Jewish+OR+antisemitism&hl=en-US&gl=US&ceid=US:en
+  - name: Sports News Ticker
+    type: rss_ticker
+    refresh_seconds: 20
+    options:
+      auto_lines: true
+      min_lines: 2
+      max_lines: 4
+      show_source: true
+      max_items: 30
+      block_sources: ["msnbc", "al jazeera"]
+      prefer_sources: ["fox news"]
+      urls:
+        - https://news.google.com/rss/search?q=YOUR_TEAMS&hl=en-US&gl=US&ceid=US:en
+  - name: Live Sports
+    type: espn_scores
+    refresh_seconds: 60
+    options:
+      preset: all_major
+      show_only_favorites: false
+      highlight_favorites: true
+      favorites:
+        nfl: ["YOUR_TEAM_ABBR"]
+        nba: ["YOUR_TEAM_ABBR"]
+        mlb: ["YOUR_TEAM_ABBR"]
+        nhl: ["YOUR_TEAM_ABBR"]
+        college-football: ["YOUR_TEAM_ABBR"]
+        mens-college-basketball: ["YOUR_TEAM_ABBR"]
+  - name: Live Summary
+    type: espn_summary
+    refresh_seconds: 120
+    options:
+      preset: all_major
+  - name: F1 Status
+    type: f1_ergast
+    refresh_seconds: 300
