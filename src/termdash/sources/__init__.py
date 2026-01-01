@@ -2,7 +2,7 @@
 
 from termdash.config import SourceConfig
 from termdash.sources.base import DataSource
-from termdash.sources.espn_scores import EspnScoresSource
+from termdash.sources.espn_scores import EspnScoresSource, EspnSummarySource
 from termdash.sources.f1_ergast import F1ErgastSource
 from termdash.sources.mcp_base import MCPSource
 from termdash.sources.open_meteo import OpenMeteoSource
@@ -13,6 +13,7 @@ SOURCE_REGISTRY = {
     "rss": RssSource,
     "mcp": MCPSource,
     "espn_scores": EspnScoresSource,
+    "espn_summary": EspnSummarySource,
     "f1_ergast": F1ErgastSource,
 }
 
