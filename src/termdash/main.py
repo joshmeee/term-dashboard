@@ -11,6 +11,7 @@ import yaml
 from termdash.config import load_config
 from termdash.dashboard import Dashboard
 from termdash.sources import create_source
+from termdash.setup import ensure_user_config
 
 
 def load_mcp_client() -> object | None:
@@ -51,13 +52,12 @@ def run() -> None:
     )
     args = parser.parse_args()
 
+    config_path = ensure_user_config(args.config)
     if args.block_source:
-        if args.config is None:
-            raise SystemExit("--config is required when using --block-source")
-        _block_source(args.config, args.block_source)
+        _block_source(config_path, args.block_source)
         return
 
-    config = load_config(args.config)
+    config = load_config(config_path)
     mcp_client = load_mcp_client()
     sources = build_sources(config, mcp_client=mcp_client)
     dashboard = Dashboard(config, sources)
