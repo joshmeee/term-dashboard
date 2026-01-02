@@ -8,6 +8,7 @@ import yaml
 
 DEFAULT_CONFIG_DIR = Path.home() / ".termdash"
 DEFAULT_CONFIG_PATH = DEFAULT_CONFIG_DIR / "config.yaml"
+DEFAULTS_PATH = DEFAULT_CONFIG_DIR / "defaults.yaml"
 
 
 def ensure_user_config(config_path: Path | None) -> Path:
@@ -24,14 +25,15 @@ def ensure_user_config(config_path: Path | None) -> Path:
 
 
 def _interactive_setup() -> dict[str, Any]:
+    defaults = _load_defaults()
     city, state, latitude, longitude = _collect_location()
-    favorites = _collect_favorites()
+    favorites = _collect_favorites(defaults.get("favorites", {}))
 
     local_query = _google_news_query(f"{city} {state}")
     state_query = _google_news_query(f"{state} government")
     federal_query = _google_news_query("US federal government")
-    topic_query = _google_news_query("Israel OR Jewish OR antisemitism")
-    sports_query = _google_news_query(_sports_query_string(favorites))
+    topic_query = _google_news_query(_topic_query(defaults))
+    sports_query = _google_news_query(_sports_query_string(favorites, defaults))
 
     return {
         "dashboard": {"title": "Term Dashboard", "refresh_ui_seconds": 1.5},
@@ -78,8 +80,8 @@ def _interactive_setup() -> dict[str, Any]:
                     "max_lines": 6,
                     "show_source": True,
                     "max_items": 40,
-                    "block_sources": ["msnbc", "al jazeera"],
-                    "prefer_sources": ["fox news"],
+                    "block_sources": defaults.get("block_sources", ["msnbc", "al jazeera"]),
+                    "prefer_sources": defaults.get("prefer_sources", ["fox news"]),
                     "urls": [local_query, state_query, federal_query, topic_query],
                 },
             },
@@ -93,8 +95,8 @@ def _interactive_setup() -> dict[str, Any]:
                     "max_lines": 4,
                     "show_source": True,
                     "max_items": 30,
-                    "block_sources": ["msnbc", "al jazeera"],
-                    "prefer_sources": ["fox news"],
+                    "block_sources": defaults.get("block_sources", ["msnbc", "al jazeera"]),
+                    "prefer_sources": defaults.get("prefer_sources", ["fox news"]),
                     "urls": [sports_query],
                 },
             },
@@ -134,15 +136,19 @@ def _lookup_location() -> tuple[str, str, float, float]:
         return "", "", 0.0, 0.0
 
 
-def _collect_favorites() -> dict[str, list[str]]:
+def _collect_favorites(defaults: dict[str, list[str]]) -> dict[str, list[str]]:
     print("Enter favorite team abbreviations (comma separated). Leave blank to skip.")
     return {
-        "nfl": _prompt_list("NFL teams (e.g., NE): "),
-        "nba": _prompt_list("NBA teams (e.g., BOS): "),
-        "mlb": _prompt_list("MLB teams (e.g., BOS,DET): "),
-        "nhl": _prompt_list("NHL teams (e.g., MTL): "),
-        "college-football": _prompt_list("NCAAF teams (e.g., MICH): "),
-        "mens-college-basketball": _prompt_list("NCAAM teams (e.g., MICH): "),
+        "nfl": _prompt_list("NFL teams (e.g., NE): ", defaults.get("nfl", [])),
+        "nba": _prompt_list("NBA teams (e.g., BOS): ", defaults.get("nba", [])),
+        "mlb": _prompt_list("MLB teams (e.g., BOS,DET): ", defaults.get("mlb", [])),
+        "nhl": _prompt_list("NHL teams (e.g., MTL): ", defaults.get("nhl", [])),
+        "college-football": _prompt_list(
+            "NCAAF teams (e.g., MICH): ", defaults.get("college-football", [])
+        ),
+        "mens-college-basketball": _prompt_list(
+            "NCAAM teams (e.g., MICH): ", defaults.get("mens-college-basketball", [])
+        ),
     }
 
 
@@ -162,10 +168,11 @@ def _prompt_float(prompt: str) -> float:
             print("Please enter a number.")
 
 
-def _prompt_list(prompt: str) -> list[str]:
-    value = input(prompt).strip()
+def _prompt_list(prompt: str, default: list[str]) -> list[str]:
+    default_text = ",".join(default) if default else ""
+    value = input(f"{prompt}{f'[{default_text}] ' if default_text else ''}").strip()
     if not value:
-        return []
+        return list(default)
     return [item.strip().upper() for item in value.split(",") if item.strip()]
 
 
@@ -181,10 +188,29 @@ def _google_news_query(query: str) -> str:
     return f"https://news.google.com/rss/search?q={safe}&hl=en-US&gl=US&ceid=US:en"
 
 
-def _sports_query_string(favorites: dict[str, list[str]]) -> str:
+def _sports_query_string(favorites: dict[str, list[str]], defaults: dict[str, Any]) -> str:
     names: list[str] = []
     for teams in favorites.values():
         names.extend(teams)
-    if not names:
-        return "NFL OR NBA OR MLB OR NHL"
-    return " OR ".join(names)
+    if names:
+        return " OR ".join(names)
+    topics = defaults.get("sports_topics")
+    if isinstance(topics, list) and topics:
+        return " OR ".join(str(topic) for topic in topics)
+    return "NFL OR NBA OR MLB OR NHL"
+
+
+def _topic_query(defaults: dict[str, Any]) -> str:
+    topics = defaults.get("news_topics")
+    if isinstance(topics, list) and topics:
+        return " OR ".join(str(topic) for topic in topics)
+    return "Israel OR Jewish OR antisemitism"
+
+
+def _load_defaults() -> dict[str, Any]:
+    if not DEFAULTS_PATH.exists():
+        return {}
+    data = yaml.safe_load(DEFAULTS_PATH.read_text(encoding="utf-8")) or {}
+    if not isinstance(data, dict):
+        return {}
+    return data
